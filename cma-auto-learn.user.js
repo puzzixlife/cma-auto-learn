@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.6.0
+// @version      2.7.0
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -14,20 +14,13 @@
 (function () {
     'use strict';
 
-    // === 只在顶层窗口运行，iframe 内只做弹窗拦截+静音 ===
+    // === 只在顶层窗口运行，iframe 内只做弹窗拦截 ===
     if (window.self !== window.top) {
         function initIframe() {
             window.alert = function () {};
             window.confirm = function () { return true; };
             window.prompt = function () { return ''; };
-            document.querySelectorAll('video, audio').forEach(el => {
-                el.muted = true; el.volume = 0;
-            });
-            new MutationObserver(() => {
-                document.querySelectorAll('video, audio').forEach(el => {
-                    if (!el.muted) { el.muted = true; el.volume = 0; }
-                });
-            }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+            // 不再强制静音，由主窗口控制
         }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initIframe);
@@ -291,21 +284,32 @@
         `;
         document.body.appendChild(panel);
 
-        let dragging = false, dx = 0, dy = 0;
+        let dragging = false, dx = 0, dy = 0, dragMoved = false;
         panel.querySelector('#cma-panel-header').addEventListener('mousedown', e => {
-            dragging = true; dx = e.clientX - panel.offsetLeft; dy = e.clientY - panel.offsetTop;
+            dragging = true; dragMoved = false;
+            dx = e.clientX - panel.offsetLeft;
+            dy = e.clientY - panel.offsetTop;
+            e.preventDefault();
         });
         document.addEventListener('mousemove', e => {
             if (!dragging) return;
-            panel.style.left = (e.clientX - dx) + 'px';
-            panel.style.top = (e.clientY - dy) + 'px';
+            dragMoved = true;
+            let newLeft = e.clientX - dx;
+            let newTop = e.clientY - dy;
+            // 限制在网页可视范围内
+            newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - panel.offsetWidth));
+            newTop = Math.max(0, Math.min(newTop, window.innerHeight - panel.offsetHeight));
+            panel.style.left = newLeft + 'px';
+            panel.style.top = newTop + 'px';
             panel.style.right = 'auto';
         });
         document.addEventListener('mouseup', () => dragging = false);
 
-        // 三级折叠：展开 → 收起日志 → 全部收起
+        // 三级折叠，拖动时不触发
         let collapseLevel = 0;
-        panel.querySelector('#cma-panel-toggle').addEventListener('click', () => {
+        panel.querySelector('#cma-panel-toggle').addEventListener('click', (e) => {
+            if (dragMoved) return; // 拖动后不触发折叠
+            e.stopPropagation();
             collapseLevel = (collapseLevel + 1) % 3;
             const body = panel.querySelector('#cma-panel-body');
             const sections = panel.querySelector('#cma-panel-sections');

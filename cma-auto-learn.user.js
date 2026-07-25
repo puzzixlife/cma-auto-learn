@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.0.0
+// @version      2.4.0
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -222,32 +222,38 @@
                 if (title) return title;
             }
         }
-        // 方法2: 主页面中 active/当前 的 s_point
-        const selectors = ['.s_point.active', '.s_point.s_pointcur'];
+        // 方法2: active/当前 class
+        const selectors = ['.s_point.active', '.s_point.s_pointcur', '.s_point.selected', '.s_point.current'];
         for (const sel of selectors) {
             const el = document.querySelector(sel);
-            if (el) {
-                const title = el.querySelector('.s_pointti')?.textContent?.trim();
-                if (title) return title;
-            }
+            if (el) { const t = el.querySelector('.s_pointti')?.textContent?.trim(); if (t) return t; }
         }
-        // 方法3: iframe 中
+        // 方法3: iframe 中查找 active/current
         for (const iframe of document.querySelectorAll('iframe')) {
             try {
                 const doc = iframe.contentDocument;
                 if (!doc) continue;
                 for (const sel of selectors) {
                     const el = doc.querySelector(sel);
-                    if (el) {
-                        const title = el.querySelector('.s_pointti')?.textContent?.trim();
-                        if (title) return title;
+                    if (el) { const t = el.querySelector('.s_pointti')?.textContent?.trim(); if (t) return t; }
+                }
+                // 方法4: 查找有背景色高亮的 s_point（当前播放项）
+                for (const el of doc.querySelectorAll('.s_point')) {
+                    const bg = getComputedStyle(el).backgroundColor;
+                    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && bg !== 'rgb(255, 255, 255)') {
+                        const t = el.querySelector('.s_pointti')?.textContent?.trim();
+                        if (t) return t;
+                    }
+                }
+                // 方法5: 查找第一个未完成的课件
+                for (const el of doc.querySelectorAll('.s_point')) {
+                    if (!isItemDone(el)) {
+                        const t = el.querySelector('.s_pointti')?.textContent?.trim();
+                        if (t) return t;
                     }
                 }
             } catch (e) {}
         }
-        // 方法4: 主页面中页面标题区域
-        const pageTitle = document.querySelector('.courseware-title, .res-title, .resName, #resName');
-        if (pageTitle) return pageTitle.textContent.trim();
         return null;
     }
 

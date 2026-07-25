@@ -7,6 +7,8 @@
 // @match        https://pxkckj-cmatc.cma.cn/*
 // @grant        none
 // @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/puzzixlife/cma-auto-learn/main/cma-auto-learn.user.js
+// @downloadURL  https://raw.githubusercontent.com/puzzixlife/cma-auto-learn/main/cma-auto-learn.user.js
 // ==/UserScript==
 
 (function () {

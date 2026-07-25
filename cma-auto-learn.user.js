@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.7.2
+// @version      2.8.0
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -198,11 +198,26 @@
 
     // ==================== 判断课件是否完成 ====================
     function isItemDone(item) {
-        // 优先通过图标 class 判断（平台真实状态）
+        // 检查当前元素
         const icon = item.querySelector('.item_done_icon');
         if (icon && icon.classList.contains('done_icon_show')) return true;
-        // 回退到 completestate 属性
         if (item.getAttribute('completestate') === '1') return true;
+
+        // 也检查其他 iframe 中同 ID 的元素（防止 stale iframe 数据）
+        if (item.id) {
+            for (const iframe of document.querySelectorAll('iframe')) {
+                try {
+                    const doc = iframe.contentDocument;
+                    if (!doc || doc === item.ownerDocument) continue;
+                    const el = doc.getElementById(item.id);
+                    if (el && el.classList.contains('s_point')) {
+                        const i = el.querySelector('.item_done_icon');
+                        if (i && i.classList.contains('done_icon_show')) return true;
+                        if (el.getAttribute('completestate') === '1') return true;
+                    }
+                } catch (e) {}
+            }
+        }
         return false;
     }
 
@@ -550,14 +565,23 @@
         let points = Array.from(document.querySelectorAll('.s_point'));
         if (points.length > 0) return { points, doc: document };
 
+        // 收集所有 iframe 中的课件，合并去重
+        const allPoints = [];
+        const seenIds = new Set();
         for (const iframe of document.querySelectorAll('iframe')) {
             try {
                 const doc = iframe.contentDocument;
                 if (!doc) continue;
-                points = Array.from(doc.querySelectorAll('.s_point'));
-                if (points.length > 0) return { points, doc };
+                const pts = doc.querySelectorAll('.s_point');
+                pts.forEach(p => {
+                    if (!seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allPoints.push(p);
+                    }
+                });
             } catch (e) {}
         }
+        if (allPoints.length > 0) return { points: allPoints, doc: document };
 
         return { points: [], doc: document };
     }

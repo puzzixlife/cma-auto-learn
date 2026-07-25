@@ -345,7 +345,8 @@
             const displayTitle = courseTitle.length > 35 ? courseTitle.substring(0, 35) + '...' : courseTitle;
             statusHTML += `<div>📖 ${displayTitle}</div>`;
         }
-        const doneItems = state.originallyDone.size;
+        const { points: allPoints } = findSPoints();
+        const doneItems = allPoints.filter(p => isItemDone(p)).length;
         const pendingItems = totalSPoints - doneItems;
         statusHTML += `<div>📊 课件: <b>${doneItems}/${totalSPoints}</b> (剩余 ${pendingItems})</div>`;
 
@@ -488,6 +489,7 @@
         const video = findVideo();
 
         if (video && video !== state.currentVideo) {
+            const oldVideo = state.currentVideo;
             state.currentVideo = video;
             state.videoEnded = false;
             video.muted = true;
@@ -495,6 +497,7 @@
 
             const title = getCurrentCourseTitle() || '未知课件';
             log(`🎬 ${title} (${formatTime(video.duration)})`);
+            if (oldVideo) log(`🔄 视频已切换`);
 
             video.addEventListener('ended', () => {
                 if (!state.videoEnded) {

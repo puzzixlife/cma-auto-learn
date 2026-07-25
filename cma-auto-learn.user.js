@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.4.0
+// @version      2.5.0
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -282,8 +282,10 @@
             </div>
             <div id="cma-panel-body">
                 <div id="cma-panel-status"></div>
-                <div id="cma-panel-debug"></div>
-                <div id="cma-panel-log"></div>
+                <div id="cma-panel-sections">
+                    <div id="cma-panel-debug"></div>
+                    <div id="cma-panel-log"></div>
+                </div>
             </div>
         `;
         document.body.appendChild(panel);
@@ -300,11 +302,27 @@
         });
         document.addEventListener('mouseup', () => dragging = false);
 
-        let collapsed = false;
+        // 三级折叠：展开 → 收起日志 → 全部收起
+        let collapseLevel = 0; // 0=全展开, 1=收起日志/调试, 2=只显示三角
         panel.querySelector('#cma-panel-toggle').addEventListener('click', () => {
-            collapsed = !collapsed;
-            panel.querySelector('#cma-panel-body').style.display = collapsed ? 'none' : '';
-            panel.querySelector('#cma-panel-toggle').textContent = collapsed ? '▶' : '▼';
+            collapseLevel = (collapseLevel + 1) % 3;
+            const body = panel.querySelector('#cma-panel-body');
+            const sections = panel.querySelector('#cma-panel-sections');
+            const toggle = panel.querySelector('#cma-panel-toggle');
+            if (collapseLevel === 0) {
+                body.style.display = '';
+                sections.style.display = '';
+                toggle.textContent = '▼';
+                panel.style.width = '340px';
+            } else if (collapseLevel === 1) {
+                sections.style.display = 'none';
+                toggle.textContent = '▶';
+                panel.style.width = '340px';
+            } else {
+                body.style.display = 'none';
+                toggle.textContent = '◀';
+                panel.style.width = 'auto';
+            }
         });
         state.panel = panel;
     }
@@ -361,13 +379,46 @@
             const cur = formatTime(v.currentTime);
             const dur = formatTime(v.duration);
             const pct = v.duration ? Math.round((v.currentTime / v.duration) * 100) : 0;
+            const playIcon = v.paused ? '⏸' : '▶';
+            const playText = v.paused ? '暂停' : '播放中';
+            const muteIcon = v.muted ? '🔇' : '🔊';
+            const muteText = v.muted ? '静音' : '有声';
             statusHTML += `<div>🎬 ${cur} / ${dur} (${pct}%)</div>`;
-            statusHTML += `<div>${v.paused ? '⏸ 暂停' : '▶ 播放中'} | 🔇 静音</div>`;
+            statusHTML += `<div style="display:flex;gap:8px;margin-top:4px;">`;
+            statusHTML += `<span id="cma-btn-play" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:12px;">${playIcon} ${playText}</span>`;
+            statusHTML += `<span id="cma-btn-mute" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:12px;">${muteIcon} ${muteText}</span>`;
+            statusHTML += `</div>`;
         } else {
             statusHTML += `<div>⏳ 等待视频...</div>`;
         }
 
         statusEl.innerHTML = statusHTML;
+
+        // 绑定按钮事件
+        const playBtn = state.panel.querySelector('#cma-btn-play');
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                if (!state.currentVideo) return;
+                if (state.currentVideo.paused) {
+                    state.currentVideo.play().catch(() => {});
+                    log('▶ 手动播放');
+                } else {
+                    state.currentVideo.pause();
+                    log('⏸ 手动暂停');
+                }
+                setTimeout(() => updatePanel(), 200);
+            });
+        }
+        const muteBtn = state.panel.querySelector('#cma-btn-mute');
+        if (muteBtn) {
+            muteBtn.addEventListener('click', () => {
+                if (!state.currentVideo) return;
+                state.currentVideo.muted = !state.currentVideo.muted;
+                state.currentVideo.volume = state.currentVideo.muted ? 0 : 1;
+                log(state.currentVideo.muted ? '🔇 已静音' : '🔊 已开声');
+                setTimeout(() => updatePanel(), 200);
+            });
+        }
         logEl.innerHTML = state.logLines.slice(-12).map(l => `<div>${l}</div>`).join('');
         logEl.scrollTop = logEl.scrollHeight;
     }
@@ -841,6 +892,8 @@
             #cma-panel-log div{margin-bottom:2px;line-height:1.4}
             #cma-panel-toggle{font-size:12px;opacity:.7}
             #cma-panel-toggle:hover{opacity:1}
+            #cma-panel-sections{transition:display 0.2s}
+            #cma-btn-play:hover,#cma-btn-mute:hover{background:rgba(99,102,241,0.4) !important}
         `;
         document.head.appendChild(s);
     }

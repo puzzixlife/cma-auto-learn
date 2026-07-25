@@ -18,15 +18,41 @@
 
 ## 📦 安装
 
-1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
-2. 点击 Tampermonkey → 添加新脚本
-3. 粘贴 [`cma-auto-learn.user.js`](./cma-auto-learn.user.js) 全部内容
-4. 保存后访问 `https://pxkckj-cmatc.cma.cn` 任意课程页面
+### 方式一：一键安装（推荐）
 
-或直接通过 GitHub Raw URL 安装：
-```
-https://raw.githubusercontent.com/<username>/cma-auto-learn/main/cma-auto-learn.user.js
-```
+1. 先安装浏览器扩展 [Tampermonkey](https://www.tampermonkey.net/)
+2. 点击下方链接，Tampermonkey 会自动弹出安装确认：
+
+   **👉 [点击安装](https://raw.githubusercontent.com/puzzixlife/cma-auto-learn/main/cma-auto-learn.user.js)**
+
+3. 点击「安装」即可
+
+### 方式二：手动安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
+2. 点击浏览器工具栏的 Tampermonkey 图标 → **添加新脚本**
+3. **清空**编辑器中的默认内容
+4. 打开 [`cma-auto-learn.user.js`](./cma-auto-learn.user.js)，复制全部内容粘贴进去
+5. 按 `Ctrl+S` 保存
+
+### 方式三：从 GitHub 导入
+
+1. 点击 Tampermonkey 图标 → **管理面板**
+2. 点击顶部 **「+」** 标签 → **实用工具**
+3. 在「从 URL 安装」中粘贴：
+   ```
+   https://raw.githubusercontent.com/puzzixlife/cma-auto-learn/main/cma-auto-learn.user.js
+   ```
+4. 点击「安装」→ 确认
+
+### 使用
+
+安装完成后，访问 `https://pxkckj-cmatc.cma.cn` 任意课程页面，脚本自动运行。页面右上角会出现浮动状态面板。
+
+### 更新
+
+脚本内置了自动更新地址，Tampermonkey 会定期检查更新。也可以手动更新：
+- Tampermonkey 图标 → 检查更新
 
 ## 🖥 面板说明
 

@@ -385,8 +385,8 @@
             const muteText = v.muted ? '静音' : '有声';
             statusHTML += `<div>🎬 ${cur} / ${dur} (${pct}%)</div>`;
             statusHTML += `<div style="display:flex;gap:8px;margin-top:4px;">`;
-            statusHTML += `<span id="cma-btn-play" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:12px;">${playIcon} ${playText}</span>`;
-            statusHTML += `<span id="cma-btn-mute" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:12px;">${muteIcon} ${muteText}</span>`;
+            statusHTML += `<span id="cma-btn-play" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:14px;" title="${playText}">${playIcon}</span>`;
+            statusHTML += `<span id="cma-btn-mute" style="cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.2);font-size:14px;" title="${muteText}">${muteIcon}</span>`;
             statusHTML += `</div>`;
         } else {
             statusHTML += `<div>⏳ 等待视频...</div>`;

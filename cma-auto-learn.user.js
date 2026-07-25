@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.7.0
+// @version      2.7.1
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -308,19 +308,25 @@
         // 三级折叠，拖动时不触发
         let collapseLevel = 0;
         panel.querySelector('#cma-panel-toggle').addEventListener('click', (e) => {
-            if (dragMoved) return; // 拖动后不触发折叠
+            if (dragMoved) return;
             e.stopPropagation();
             collapseLevel = (collapseLevel + 1) % 3;
             const body = panel.querySelector('#cma-panel-body');
             const sections = panel.querySelector('#cma-panel-sections');
             const toggle = panel.querySelector('#cma-panel-toggle');
             const header = panel.querySelector('#cma-panel-header');
+
+            // 记录折叠前 toggle 按钮的位置
+            const toggleRect = toggle.getBoundingClientRect();
+
             if (collapseLevel === 0) {
                 body.style.display = '';
                 sections.style.display = '';
                 header.querySelector('span:first-child').style.display = '';
                 toggle.textContent = '▼';
                 panel.style.width = '340px';
+                // 恢复位置：让面板右对齐到 toggle 位置
+                panel.style.left = (toggleRect.right - 340) + 'px';
             } else if (collapseLevel === 1) {
                 sections.style.display = 'none';
                 header.querySelector('span:first-child').style.display = '';
@@ -331,6 +337,8 @@
                 header.querySelector('span:first-child').style.display = 'none';
                 toggle.textContent = '◀';
                 panel.style.width = 'auto';
+                // 折叠后让 ◀ 停留在原 toggle 位置
+                panel.style.left = toggleRect.left + 'px';
             }
         });
         state.panel = panel;

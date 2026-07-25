@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.5.2
+// @version      2.6.0
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -304,23 +304,27 @@
         document.addEventListener('mouseup', () => dragging = false);
 
         // 三级折叠：展开 → 收起日志 → 全部收起
-        let collapseLevel = 0; // 0=全展开, 1=收起日志/调试, 2=只显示三角
+        let collapseLevel = 0;
         panel.querySelector('#cma-panel-toggle').addEventListener('click', () => {
             collapseLevel = (collapseLevel + 1) % 3;
             const body = panel.querySelector('#cma-panel-body');
             const sections = panel.querySelector('#cma-panel-sections');
             const toggle = panel.querySelector('#cma-panel-toggle');
+            const header = panel.querySelector('#cma-panel-header');
             if (collapseLevel === 0) {
                 body.style.display = '';
                 sections.style.display = '';
+                header.querySelector('span:first-child').style.display = '';
                 toggle.textContent = '▼';
                 panel.style.width = '340px';
             } else if (collapseLevel === 1) {
                 sections.style.display = 'none';
+                header.querySelector('span:first-child').style.display = '';
                 toggle.textContent = '▶';
                 panel.style.width = '340px';
             } else {
                 body.style.display = 'none';
+                header.querySelector('span:first-child').style.display = 'none';
                 toggle.textContent = '◀';
                 panel.style.width = 'auto';
             }
@@ -487,7 +491,10 @@
     }
 
     // ==================== 静音 ====================
-    function muteAllMedia() {
+    function muteAllMedia(forceMute = false) {
+        const shouldMute = forceMute || !state.userUnmuted;
+        if (!shouldMute) return;
+
         document.querySelectorAll('video, audio').forEach(el => {
             el.muted = true; el.volume = 0;
         });
@@ -694,6 +701,7 @@
 
         state.scriptSwitchedTo = nextItem.id;
         state.scriptVisited.add(nextItem.id);
+        state.userUnmuted = false; // 切换课件后默认静音
         expandParent(nextItem);
         setTimeout(() => {
             nextItem.click();
@@ -806,12 +814,10 @@
         setInterval(() => {
             monitorVideo();
             autoClickPopups();
-            if (!state.userUnmuted) {
-                muteAllMedia();
-                if (state.currentVideo) {
-                    state.currentVideo.muted = true;
-                    state.currentVideo.volume = 0;
-                }
+            muteAllMedia();
+            if (!state.userUnmuted && state.currentVideo) {
+                state.currentVideo.muted = true;
+                state.currentVideo.volume = 0;
             }
             updatePanel();
         }, CONFIG.CHECK_INTERVAL);

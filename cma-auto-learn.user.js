@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.5.0
+// @version      2.5.2
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -59,7 +59,8 @@
         lastClickedItemId: null,
         originallyDone: new Set(),
         scriptSwitchedTo: null,
-        scriptVisited: new Set(), // 脚本已访问过的所有课件 ID
+        scriptVisited: new Set(),
+        userUnmuted: false, // 用户手动取消静音标记
     };
 
     // ==================== 日志 ====================
@@ -415,6 +416,7 @@
                 if (!state.currentVideo) return;
                 state.currentVideo.muted = !state.currentVideo.muted;
                 state.currentVideo.volume = state.currentVideo.muted ? 0 : 1;
+                state.userUnmuted = !state.currentVideo.muted; // 记录用户操作
                 log(state.currentVideo.muted ? '🔇 已静音' : '🔊 已开声');
                 setTimeout(() => updatePanel(), 200);
             });
@@ -549,8 +551,8 @@
             const oldVideo = state.currentVideo;
             state.currentVideo = video;
             state.videoEnded = false;
-            video.muted = true;
-            video.volume = 0;
+            video.muted = state.userUnmuted ? false : true;
+            video.volume = state.userUnmuted ? 1 : 0;
 
             const title = getCurrentCourseTitle();
             if (title) {
@@ -804,10 +806,12 @@
         setInterval(() => {
             monitorVideo();
             autoClickPopups();
-            muteAllMedia();
-            if (state.currentVideo) {
-                state.currentVideo.muted = true;
-                state.currentVideo.volume = 0;
+            if (!state.userUnmuted) {
+                muteAllMedia();
+                if (state.currentVideo) {
+                    state.currentVideo.muted = true;
+                    state.currentVideo.volume = 0;
+                }
             }
             updatePanel();
         }, CONFIG.CHECK_INTERVAL);

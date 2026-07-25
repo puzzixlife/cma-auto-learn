@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.8.0
+// @version      2.8.1
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -53,7 +53,8 @@
         originallyDone: new Set(),
         scriptSwitchedTo: null,
         scriptVisited: new Set(),
-        userUnmuted: false, // 用户手动取消静音标记
+        userUnmuted: false,
+        lastSwitchTime: 0, // 上次切换时间戳
     };
 
     // ==================== 日志 ====================
@@ -647,6 +648,11 @@
 
     // ==================== 自动切换 ====================
     function onVideoEnded() {
+        // 冷却检查：切换后5秒内不触发结束事件
+        if (Date.now() - state.lastSwitchTime < 5000) {
+            log('⏳ 冷却中，忽略视频结束事件');
+            return;
+        }
         log('⏭ 视频结束，等待平台更新状态...');
         setTimeout(() => {
             playNextIncomplete();
@@ -737,7 +743,8 @@
 
         state.scriptSwitchedTo = nextItem.id;
         state.scriptVisited.add(nextItem.id);
-        state.userUnmuted = false; // 切换课件后默认静音
+        state.userUnmuted = false;
+        state.lastSwitchTime = Date.now(); // 记录切换时间
         expandParent(nextItem);
         setTimeout(() => {
             nextItem.click();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         气象培训平台自动学习助手
 // @namespace    https://pxkckj-cmatc.cma.cn/
-// @version      2.7.1
+// @version      2.7.2
 // @description  自动弹窗点击确定、静音页面、监控视频播放进度、视频结束后自动切换下一个未完成课件
 // @author       OpenClaw
 // @match        https://pxkckj-cmatc.cma.cn/*
@@ -675,22 +675,22 @@
         const currentId = getCurrentItemId();
 
         // 详细日志: 列出所有课件状态
-        log(`📋 共找到 ${points.length} 个课件:`);
+        log(`📋 共${points.length}个课件:`);
         points.forEach((p, i) => {
-            const title = (p.querySelector('.s_pointti')?.textContent || '?').substring(0, 25);
+            const title = (p.querySelector('.s_pointti')?.textContent || '?').substring(0, 20);
             const icon = p.querySelector('.item_done_icon');
-            const hasDoneClass = icon ? icon.classList.contains('done_icon_show') : 'no-icon';
-            const compState = p.getAttribute('completestate');
+            const iconClass = icon ? icon.classList.contains('done_icon_show') : 'no-icon';
+            const comp = p.getAttribute('completestate');
+            const done = isItemDone(p);
             const inOrig = state.originallyDone.has(p.id);
-            const visited = state.scriptVisited.has(p.id);
-            const isCur = p.id === currentId;
-            log(`  ${i+1}. [${title}] doneClass=${hasDoneClass} comp=${compState} orig=${inOrig} vis=${visited} cur=${isCur}`);
+            const vis = state.scriptVisited.has(p.id);
+            const cur = p.id === currentId;
+            if (i < 8) log(`  ${i+1}. [${title}] done=${done} icon=${iconClass} comp=${comp} orig=${inOrig} vis=${vis} cur=${cur}`);
         });
+        if (points.length > 8) log(`  ... 共${points.length}个`);
 
-        // 找出从未完成过的课件（排除启动时已完成的）
         const neverDone = points.filter(p => !state.originallyDone.has(p.id));
 
-        // 从 neverDone 中找未完成的，排除当前播放的，排除已访问过的
         const candidates = neverDone.filter(p => {
             if (p.id === currentId) return false;
             if (state.scriptVisited.has(p.id)) return false;

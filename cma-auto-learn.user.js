@@ -495,8 +495,17 @@
             video.muted = true;
             video.volume = 0;
 
-            const title = getCurrentCourseTitle() || '未知课件';
-            log(`🎬 ${title} (${formatTime(video.duration)})`);
+            const title = getCurrentCourseTitle();
+            if (title) {
+                log(`🎬 ${title} (${formatTime(video.duration)})`);
+            } else {
+                log(`🎬 检测到视频 (${formatTime(video.duration)})`);
+                // 延迟重试获取标题
+                setTimeout(() => {
+                    const t = getCurrentCourseTitle();
+                    if (t) log(`📖 当前课件: ${t}`);
+                }, 2000);
+            }
             if (oldVideo) log(`🔄 视频已切换`);
 
             video.addEventListener('ended', () => {
